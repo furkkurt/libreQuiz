@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "719482587533",
+    "project_id": "libre-quiz",
+    "storage_bucket": "libre-quiz.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719482587533:android:cd68b724631f15b8a655c4",
+        "android_client_info": {
+          "package_name": "com.makinda.libre_quiz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcgx7C6NXoKgppoeK3neKirJLU81uRMGQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719482587533:android:b49b7ff9f3bbc39ba655c4",
+        "android_client_info": {
+          "package_name": "com.makinda.libre_quize_qui"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcgx7C6NXoKgppoeK3neKirJLU81uRMGQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
