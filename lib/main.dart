@@ -14,11 +14,12 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  //var auth = FirebaseAuth.instance;
+  var auth = FirebaseAuth.instance;
   MyApp({super.key});
 
   @override
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Libre Quiz',
-        home: LobbyScreen()
+        home: auth.currentUser != null ? HomeScreen() : LoginScreen(),
     );
   }
 }

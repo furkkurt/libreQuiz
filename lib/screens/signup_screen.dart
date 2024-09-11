@@ -15,9 +15,13 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _RePasswordController = TextEditingController();
+  String emailAddress = "";
+  String password = "";
 
+  /*
   void addData() async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
 
@@ -27,6 +31,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
     });
 
   }
+  */
+
+  void signUp() async {
+    emailAddress = _emailController.text;
+    password = _passwordController.text;
+
+    print(emailAddress);
+    print(password);
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailAddress,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'weak-password') {
+        print('The password provided is too weak.');
+      } else if (e.code == 'email-already-in-use') {
+        print('The account already exists for that email.');
+      }
+    } catch (e) {
+      print(e);
+    }
+
+    print("HEYY");
+    print(FirebaseAuth.instance.currentUser);
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -39,6 +70,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
             controller: _usernameController,
             decoration: InputDecoration(
               labelText: "Username",
+            ),
+          ),
+          TextField(
+            controller: _emailController,
+            decoration: InputDecoration(
+              labelText: "email",
             ),
           ),
           TextField(
@@ -55,7 +92,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           SizedBox(height: 40),
           TextButton(
-            onPressed: () => addData(),
+            onPressed: () => signUp(),
             child: Text('Sign Up'),
           ),
           SizedBox(height: 80),

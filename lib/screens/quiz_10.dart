@@ -10,7 +10,9 @@ import 'package:libre_quiz/screens/home_screen.dart';
 import 'login_screen.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key});
+  final String roomId;
+  const QuizScreen({Key? key, required this.roomId}) : super(key: key);
+
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -28,12 +30,13 @@ class _QuizScreenState extends State<QuizScreen> {
   int correctOption = 1;
   late int realCorrectOption;
   int score = 0;
+  int questionCount = 0;
 
   @override
   void initState() {
     setState(() {
       super.initState();
-      showQuestion();
+      //showQuestion();
     });
   }
 
@@ -46,21 +49,37 @@ class _QuizScreenState extends State<QuizScreen> {
   }
   */
 
-  void showQuestion() async {
-    CollectionReference quizes = FirebaseFirestore.instance.collection('quizes');
-    QuerySnapshot querySnapshot = await quizes.get();
-    var questionId = Random().nextInt(querySnapshot.docs.length);
+  void showQuestion(roomId) async {
+    print("HEEEEEYYYYYY");
+    print(questionCount);
+    print(roomId.toString());
+    DocumentReference gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
+    DocumentSnapshot querySnapshotRoom = await gameRoom.get();
+    CollectionReference questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
+    QuerySnapshot querySnapshotQuiz = await questions.get();
+    var questionNumsStr = [""];
+    var questionNums = [];
+    print(questionNumsStr);
+    print(querySnapshotRoom["category"]);
+    questionNumsStr = querySnapshotRoom["questionNums"].split("/");
+    for (int i = 0; i<questionNumsStr.length; i++) {
+      questionNums.add(int.parse(questionNumsStr[i]));
+    }
+    print(questionNums);
 
-    _categorySC.add(querySnapshot.docs[questionId]['category']);
-    _questionSC.add(querySnapshot.docs[questionId]['question']);
-    _option1SC.add(querySnapshot.docs[questionId]['option1']);
-    _option2SC.add(querySnapshot.docs[questionId]['option2']);
-    _option3SC.add(querySnapshot.docs[questionId]['option3']);
-    _option4SC.add(querySnapshot.docs[questionId]['option4']);
-    realCorrectOption = querySnapshot.docs[questionId]['answer'];
+    int questionId = questionNums[questionCount];
+    print(questionId);
+
+    _questionSC.add(querySnapshotQuiz.docs[questionId]['question']);
+    _option1SC.add(querySnapshotQuiz.docs[questionId]['option1']);
+    _option2SC.add(querySnapshotQuiz.docs[questionId]['option2']);
+    _option3SC.add(querySnapshotQuiz.docs[questionId]['option3']);
+    _option4SC.add(querySnapshotQuiz.docs[questionId]['option4']);
+
+    questionCount++;
   }
 
-  void answer() {
+  void answer(roomId) {
     if (correctOption == realCorrectOption) {
       print("correct");
       score++;
@@ -68,10 +87,13 @@ class _QuizScreenState extends State<QuizScreen> {
     else {
       print("false");
     }
-    showQuestion();
+    showQuestion(roomId);
   }
 
   Widget build(BuildContext context) {
+    String roomId = widget.roomId;
+    showQuestion(roomId);
+
     return Scaffold(
       appBar: AppBar(
           title: Text("Question"),
@@ -157,7 +179,7 @@ class _QuizScreenState extends State<QuizScreen> {
             value: correctOption,
           ),
           TextButton(
-            onPressed: () => showQuestion(),
+            onPressed: () => showQuestion(roomId),
             child: Text("Answer"),
           ),
         ],

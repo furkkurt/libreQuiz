@@ -13,9 +13,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController= TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  /*
   void readData() async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
 
@@ -28,6 +29,23 @@ class _LoginScreenState extends State<LoginScreen> {
           print("KULLANICI YOK");
     });
   }
+  */
+
+  void login() async {
+    try {
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        print('No user found for that email.');
+      } else if (e.code == 'wrong-password') {
+        print('Wrong password provided for that user.');
+      }
+    }
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -37,9 +55,9 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           SizedBox(height: 40),
           TextField(
-            controller: _usernameController,
+            controller: _emailController,
             decoration: InputDecoration(
-              labelText: "Username",
+              labelText: "Email",
             ),
           ),
           TextField(
@@ -50,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           SizedBox(height: 40),
           TextButton(
-            onPressed: () => readData(),
+            onPressed: () => login(),
             child: Text('Login'),
           ),
           SizedBox(height: 80),

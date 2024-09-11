@@ -17,25 +17,38 @@ class _LobbyScreenState extends State<LobbyScreen> {
   final TextEditingController _idController= TextEditingController();
 
 
-  Future<void> createRoom(String roomId) async {
-    List<int> nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+  Future<void> createRoom(String roomId, String roomCategory) async {
+    CollectionReference categoryDB = FirebaseFirestore.instance.collection('quizes').doc(roomCategory).collection("questions");
+    QuerySnapshot querySnapshot = await categoryDB.get();
+    int questionCount = querySnapshot.size;
+
+    List<int> nums = [];
+
+    for(int i=1; i<=questionCount; i++) {
+      nums.add(i);
+    }
+
     nums.shuffle();
-    var order = nums.join("");
+    var order = nums.join("/");
 
     await FirebaseFirestore.instance.collection('gameRooms').doc(roomId).set({
-      'player1': 'furkan',
+      'player1': FirebaseAuth.instance.currentUser?.uid,
       'player2': '',
       'player1score': 0,
       'player2score': 0,
-      'quetionNums': order
+      'player1start': false,
+      'player2start': false,
+      'questionNums': order,
+      'category': roomCategory,
+      'roomId': _idController.text
     });
   }
 
 
 
-  Future<void> joinRoom(String roomId, String playerName) async {
+  Future<void> joinRoom(String roomId, String playerUID) async {
     await FirebaseFirestore.instance.collection('gameRooms').doc(roomId).update({
-      'player2': "kurt",
+      'player2': playerUID,
     });
   }
 
@@ -43,17 +56,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
     return FirebaseFirestore.instance.collection('gameRooms').doc(roomId).snapshots();
   }
 
-  void start() async {
-    CollectionReference rooms = FirebaseFirestore.instance.collection('gameRooms');
-    QuerySnapshot querySnapshot = await rooms.get();
+  void start(BuildContext ctx) async {
+    DocumentReference room = FirebaseFirestore.instance.collection('gameRooms').doc("a");
+    DocumentSnapshot roomSnapshot = await room.get();
 
-    querySnapshot.docs.forEach((doc) {
-      if (doc['player1'] != "" && doc["player2"] != "") {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen()));
-      }
-    });
+    if(roomSnapshot["player1"] == FirebaseAuth.instance.currentUser?.uid)
+      room.update({"player1start": true});
+    else if(roomSnapshot["player2"] == FirebaseAuth.instance.currentUser?.uid)
+      room.update({"player2start": true});
+
+    while (roomSnapshot['player1start'] == false || roomSnapshot["player2start"] == false){
+      room = FirebaseFirestore.instance.collection('gameRooms').doc("a");
+      roomSnapshot = await room.get();
+    };
+
+    print("ROOM ID: " + _idController.text);
+    Navigator.of(ctx).push(MaterialPageRoute(builder: (_) { return QuizScreen(roomId: _idController.text);}));
   }
-
 
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,7 +82,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       body: Column(
         children: [
           TextButton(
-            onPressed: () => createRoom("a"),
+            onPressed: () => createRoom("a", "Movies and TV"),
             child: Text('Create Room'),
           ),
           TextField(
@@ -73,11 +92,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ),
           ),
           TextButton(
-            onPressed: () => joinRoom("a", "kurt"),
+            onPressed: () => joinRoom("a", FirebaseAuth.instance.currentUser!.uid),
             child: Text('Join Room'),
           ),
           TextButton(
-            onPressed: () => start(),
+            onPressed: () => start(context),
             child: Text('Start'),
           ),
         ],

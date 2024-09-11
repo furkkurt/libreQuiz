@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:libre_quiz/screens/add_question_screen.dart';
+import 'package:libre_quiz/screens/lobby.dart';
 import 'package:libre_quiz/screens/quiz_10.dart';
 import 'package:libre_quiz/screens/solo_quiz_screen.dart';
 
@@ -22,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           TextButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen())),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyScreen())),
             child: Text('Play'),
           ),
           TextButton(
