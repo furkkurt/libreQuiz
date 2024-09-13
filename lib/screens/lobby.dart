@@ -24,7 +24,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     List<int> nums = [];
 
-    for(int i=1; i<=questionCount; i++) {
+    for(int i=1; i<questionCount; i++) {
       nums.add(i);
     }
 
@@ -38,6 +38,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
       'player2score': 0,
       'player1start': false,
       'player2start': false,
+      'player1answered': false,
+      'player2answered': false,
       'questionNums': order,
       'category': roomCategory,
       'roomId': _idController.text

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import 'package:libre_quiz/screens/home_screen.dart';
 
 import 'login_screen.dart';
@@ -22,6 +23,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
   final TextEditingController _option2Controller = TextEditingController();
   final TextEditingController _option3Controller = TextEditingController();
   final TextEditingController _option4Controller = TextEditingController();
+  final TextEditingController _newCategoryController = TextEditingController();
   List<String> categories = [];
   String selectedCategory = "";
   var optionNums = [1, 2, 3, 4];
@@ -36,8 +38,6 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
   }
 
   void addQuestion() async {
-    print(FirebaseFirestore.instance.collection("quizes").doc("Turkish History").collection("questions"));
-    print(FirebaseFirestore.instance.collection("quizes").doc(selectedCategory).collection("questions"));
     CollectionReference quizes = FirebaseFirestore.instance.collection('quizes').doc(selectedCategory).collection('questions');
 
     if (_questionController.text != "" && _option1Controller.text != "" && _option2Controller.text != "" && _option3Controller.text != "" && _option4Controller.text != ""){
@@ -67,6 +67,15 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
     _categorySC.add(categories);
   }
 
+  void addCategory() async {
+    CollectionReference quizes = FirebaseFirestore.instance.collection('quizes');
+
+    await quizes.doc(_newCategoryController.text).set({
+      "name": _newCategoryController.text,
+      "owner": FirebaseAuth.instance.currentUser!.uid
+    });
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -75,6 +84,20 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
       body: Column(
         children: [
           SizedBox(height: 40),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(child:
+                TextField(
+                  controller: _newCategoryController,
+                  decoration: InputDecoration(
+                    labelText: "New Category",
+                  ),
+                ),
+              ),
+              TextButton(onPressed: () => addCategory(), child: Text("Add new catgory")),
+            ],
+          ),
           StreamBuilder(
               stream: _categorySC.stream,
               builder: (context, snapshot) {

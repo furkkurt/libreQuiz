@@ -25,12 +25,25 @@ class _QuizScreenState extends State<QuizScreen> {
   StreamController<String> _option2SC= StreamController<String>();
   StreamController<String> _option3SC= StreamController<String>();
   StreamController<String> _option4SC= StreamController<String>();
+  StreamController<String> _answerSC= StreamController<String>();
+  StreamController<String> _plScoreSC= StreamController<String>();
+  StreamController<String> _opScoreSC= StreamController<String>();
+  StreamController<String> _timerSC= StreamController<String>();
 
+  var optionDefs = [1, 2, 3, 4];
   var optionNums = [1, 2, 3, 4];
   int correctOption = 1;
   late int realCorrectOption;
   int score = 0;
   int questionCount = 0;
+  var questionNums = [];
+  int questionId = 0;
+  String playerScore = "";
+  String opScore = "";
+  late DocumentReference gameRoom;
+  late DocumentSnapshot querySnapshotRoom;
+  late CollectionReference questions;
+  late QuerySnapshot querySnapshotQuiz;
 
   @override
   void initState() {
@@ -39,60 +52,118 @@ class _QuizScreenState extends State<QuizScreen> {
       //showQuestion();
     });
   }
-
-  /*
-  void deneme(){
-    Future.delayed(const Duration(seconds: 2), () {
-      showQuestion();
-      print("hey");
-    });
-  }
-  */
-
-  void showQuestion(roomId) async {
-    print("HEEEEEYYYYYY");
-    print(questionCount);
-    print(roomId.toString());
+  void getDB(roomId) async{
     DocumentReference gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
     DocumentSnapshot querySnapshotRoom = await gameRoom.get();
     CollectionReference questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
     QuerySnapshot querySnapshotQuiz = await questions.get();
+
+    if (querySnapshotRoom["player1"] == FirebaseAuth.instance.currentUser!.uid) {
+      playerScore = "player1score";
+      opScore = "player2score";
+    } else {
+      playerScore = "player2score";
+      opScore = "player1score";
+    }
+  }
+
+  void timeout(roomId) {
+    int questionCountNow = questionCount;
+    int remainingSeconds = 20;
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      if(questionCountNow == questionCount)
+        _timerSC.add((remainingSeconds--).toString());
+      else
+        timer.cancel();
+    });
+    Future.delayed(const Duration(seconds: 21), () async {
+      if(questionCountNow == questionCount) {
+        questionCount++;
+        print("times up " + questionCount.toString());
+        gameRoom.update({playerScore: score});
+
+        _answerSC.add(querySnapshotQuiz.docs[questionId]["option1"]);
+        _plScoreSC.add(querySnapshotRoom[playerScore].toString());
+        _opScoreSC.add(querySnapshotRoom[opScore].toString());
+        gameRoom.update({"player1answered": true, "player2answered": true});
+
+        Future.delayed(const Duration(seconds: 5), () async {
+          _answerSC.add("");
+          _plScoreSC.add("");
+          _opScoreSC.add("");
+          gameRoom.update({"player1answered": false, "player2answered": false});
+          showQuestion(roomId);
+        });
+      }
+    });
+  }
+
+  void showQuestion(roomId) async {
+    timeout(roomId);
+    gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
+    querySnapshotRoom = await gameRoom.get();
+    questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
+    querySnapshotQuiz = await questions.get();
     var questionNumsStr = [""];
-    var questionNums = [];
-    print(questionNumsStr);
-    print(querySnapshotRoom["category"]);
+
     questionNumsStr = querySnapshotRoom["questionNums"].split("/");
     for (int i = 0; i<questionNumsStr.length; i++) {
       questionNums.add(int.parse(questionNumsStr[i]));
     }
-    print(questionNums);
+    questionId = questionNums[questionCount];
 
-    int questionId = questionNums[questionCount];
-    print(questionId);
-
+    optionNums.shuffle();
     _questionSC.add(querySnapshotQuiz.docs[questionId]['question']);
-    _option1SC.add(querySnapshotQuiz.docs[questionId]['option1']);
-    _option2SC.add(querySnapshotQuiz.docs[questionId]['option2']);
-    _option3SC.add(querySnapshotQuiz.docs[questionId]['option3']);
-    _option4SC.add(querySnapshotQuiz.docs[questionId]['option4']);
-
-    questionCount++;
+    _option1SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[0].toString()]);
+    _option2SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[1].toString()]);
+    _option3SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[2].toString()]);
+    _option4SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[3].toString()]);
   }
 
-  void answer(roomId) {
-    if (correctOption == realCorrectOption) {
-      print("correct");
+  void answer(roomId) async {
+    if(correctOption == 1)
       score++;
-    }
-    else {
-      print("false");
-    }
-    showQuestion(roomId);
+    gameRoom.update({playerScore: score});
+    print("(129)Score: " + score.toString());
+
+    gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
+    querySnapshotRoom = await gameRoom.get();
+    questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
+    querySnapshotQuiz = await questions.get();
+
+    if(querySnapshotRoom["player1answered"] && querySnapshotRoom["player2answered"])
+      questionCount++;
+
+    if(querySnapshotRoom["player1"] == FirebaseAuth.instance.currentUser!.uid)
+      gameRoom.update({"player1answered": true});
+    else
+      gameRoom.update({"player2answered": true});
+
+    while (querySnapshotRoom['player1answered'] == false || querySnapshotRoom["player2answered"] == false){
+      gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
+      querySnapshotRoom = await gameRoom.get();
+      print("WAITING FOR OPPONENT TO ANSWER");
+    };
+
+    _answerSC.add(querySnapshotQuiz.docs[questionId]["option1"]);
+    _plScoreSC.add(querySnapshotRoom[playerScore].toString());
+    _opScoreSC.add(querySnapshotRoom[opScore].toString());
+
+    Future.delayed(const Duration(seconds: 5), () async {
+      _answerSC.add("");
+      _plScoreSC.add("");
+      _opScoreSC.add("");
+      gameRoom.update({"player1answered": false, "player2answered": false});
+      showQuestion(roomId);
+    });
   }
 
   Widget build(BuildContext context) {
     String roomId = widget.roomId;
-    showQuestion(roomId);
+    if(questionId == 0){
+      getDB(roomId);
+      showQuestion(roomId);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -168,7 +239,7 @@ class _QuizScreenState extends State<QuizScreen> {
             items: optionNums.map((int item){
               return DropdownMenuItem(
                   value: item,
-                  child: Text(["A", "B", "C", "D"][item-1])
+                  child: Text(["A", "B", "C", "D"][optionNums.indexOf(item)])
               );
             }).toList(),
             onChanged: (int? newValue) {
@@ -179,8 +250,49 @@ class _QuizScreenState extends State<QuizScreen> {
             value: correctOption,
           ),
           TextButton(
-            onPressed: () => showQuestion(roomId),
+            onPressed: () => answer(roomId),
             child: Text("Answer"),
+          ),
+          SizedBox(height: 40,),
+          StreamBuilder(
+              stream: _timerSC.stream,
+              builder: (context, snapshot) {
+                if(snapshot.hasData) {
+                  return Flexible(child: Text(snapshot.data.toString()));
+                } else {
+                  return Flexible(child: Text(""));
+                }
+              }
+          ),
+          StreamBuilder(
+              stream: _answerSC.stream,
+              builder: (context, snapshot) {
+                if(snapshot.hasData && snapshot.data.toString().isNotEmpty) {
+                  return Flexible(child: Text("Answer: " + snapshot.data.toString()));
+                } else {
+                  return Flexible(child: Text(""));
+                }
+              }
+          ),
+          StreamBuilder(
+              stream: _plScoreSC.stream,
+              builder: (context, snapshot) {
+                if(snapshot.hasData && snapshot.data.toString().isNotEmpty) {
+                  return Flexible(child: Text("Your Score: " + snapshot.data.toString()));
+                } else {
+                  return Flexible(child: Text(""));
+                }
+              }
+          ),
+          StreamBuilder(
+              stream: _opScoreSC.stream,
+              builder: (context, snapshot) {
+                if(snapshot.hasData && snapshot.data.toString().isNotEmpty) {
+                  return Flexible(child: Text("Opponent Score: " + snapshot.data.toString()));
+                } else {
+                  return Flexible(child: Text(""));
+                }
+              }
           ),
         ],
       )
