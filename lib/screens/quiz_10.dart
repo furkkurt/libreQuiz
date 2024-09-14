@@ -166,9 +166,6 @@ class _QuizScreenState extends State<QuizScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-          title: Text("Question"),
-      ),
       body: Column(
         children: [
           SizedBox(height: 40),
