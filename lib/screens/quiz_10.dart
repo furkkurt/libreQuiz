@@ -120,9 +120,7 @@ class _QuizScreenState extends State<QuizScreen> {
     _option4SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[3].toString()]);
   }
 
-  void answer(roomId) async {
-    if(correctOption == 1)
-      score++;
+  void answer(roomId, choice) async {
     gameRoom.update({playerScore: score});
     print("(129)Score: " + score.toString());
 
@@ -130,6 +128,11 @@ class _QuizScreenState extends State<QuizScreen> {
     querySnapshotRoom = await gameRoom.get();
     questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
     querySnapshotQuiz = await questions.get();
+
+    if(choice == querySnapshotQuiz.docs[questionId]["option1"])
+      score++;
+    print(choice);
+    print(querySnapshotQuiz.docs[questionId]["option1"]);
 
     if(querySnapshotRoom["player1answered"] && querySnapshotRoom["player2answered"])
       questionCount++;
@@ -184,7 +187,7 @@ class _QuizScreenState extends State<QuizScreen> {
               stream: _questionSC.stream,
               builder: (context, snapshot) {
                 if(snapshot.hasData) {
-                  return Flexible(child: Text(snapshot.data??''));
+                  return FractionallySizedBox(widthFactor: 0.7, child: Flexible(child: Text(snapshot.data??'')));
                 } else {
                   return Flexible(child: Text(""));
                 }
@@ -194,44 +197,34 @@ class _QuizScreenState extends State<QuizScreen> {
           StreamBuilder(
               stream: _option1SC.stream,
               builder: (context, snapshot) {
-                if(snapshot.hasData) {
-                  return Flexible(child: Text("A: " + snapshot.data.toString()));
-                } else {
-                  return Flexible(child: Text("A: "));
-                }
+                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("A: " + snapshot.data.toString()));
               }
           ),
           StreamBuilder(
               stream: _option2SC.stream,
               builder: (context, snapshot) {
-                if(snapshot.hasData) {
-                  return Flexible(child: Text("B: " + snapshot.data.toString()));
-                } else {
-                  return Flexible(child: Text("B: "));
-                }
+                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("B: " + snapshot.data.toString()));
               }
           ),
           StreamBuilder(
               stream: _option3SC.stream,
               builder: (context, snapshot) {
-                if(snapshot.hasData) {
-                  return Flexible(child: Text("C: " + snapshot.data.toString()));
-                } else {
-                  return Flexible(child: Text("C: "));
-                }
+                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("C: " + snapshot.data.toString()));
               }
           ),
           StreamBuilder(
               stream: _option4SC.stream,
               builder: (context, snapshot) {
-                if(snapshot.hasData) {
-                  return Flexible(child: Text("D: " + snapshot.data.toString()));
-                } else {
-                  return Flexible(child: Text("D: "));
-                }
+                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("D: " + snapshot.data.toString()));
               }
           ),
           SizedBox(height: 40),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+            ],
+          ),
+          /*
           DropdownButton(
             items: optionNums.map((int item){
               return DropdownMenuItem(
@@ -250,6 +243,7 @@ class _QuizScreenState extends State<QuizScreen> {
             onPressed: () => answer(roomId),
             child: Text("Answer"),
           ),
+          */
           SizedBox(height: 40,),
           StreamBuilder(
               stream: _timerSC.stream,
