@@ -1,13 +1,9 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:libre_quiz/screens/home_screen.dart';
-
-import 'login_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   final String roomId;
@@ -71,8 +67,10 @@ class _QuizScreenState extends State<QuizScreen> {
     int questionCountNow = questionCount;
     int remainingSeconds = 20;
     Timer.periodic(Duration(seconds: 1), (timer) {
-      if(questionCountNow == questionCount)
+      if(questionCountNow == questionCount) {
+        print("HEYY " + questionCountNow.toString() + " TO " + questionCount.toString());
         _timerSC.add((remainingSeconds--).toString());
+      }
       else
         timer.cancel();
     });
@@ -88,6 +86,7 @@ class _QuizScreenState extends State<QuizScreen> {
         gameRoom.update({"player1answered": true, "player2answered": true});
 
         Future.delayed(const Duration(seconds: 5), () async {
+          _timerSC.add("");
           _answerSC.add("");
           _plScoreSC.add("");
           _opScoreSC.add("");
@@ -134,9 +133,18 @@ class _QuizScreenState extends State<QuizScreen> {
     print(choice);
     print(querySnapshotQuiz.docs[questionId]["option1"]);
 
-    if(querySnapshotRoom["player1answered"] && querySnapshotRoom["player2answered"])
-      questionCount++;
-
+    /*
+    print("ASDASDYY 137 " + questionCount.toString());
+    int questionCountNow = questionCount;
+    Timer.periodic(Duration(seconds: 1), (timer) async {
+      querySnapshotQuiz = await questions.get();
+      if(questionCountNow != questionCount)
+        timer.cancel();
+      if(querySnapshotRoom["player1answered"] && querySnapshotRoom["player2answered"])
+        questionCount++;
+      print("ASDASDYY 145 " + questionCount.toString());
+    });
+    */
     if(querySnapshotRoom["player1"] == FirebaseAuth.instance.currentUser!.uid)
       gameRoom.update({"player1answered": true});
     else
@@ -224,26 +232,6 @@ class _QuizScreenState extends State<QuizScreen> {
             children: [
             ],
           ),
-          /*
-          DropdownButton(
-            items: optionNums.map((int item){
-              return DropdownMenuItem(
-                  value: item,
-                  child: Text(["A", "B", "C", "D"][optionNums.indexOf(item)])
-              );
-            }).toList(),
-            onChanged: (int? newValue) {
-              setState(() {
-                correctOption = newValue!;
-              });
-            },
-            value: correctOption,
-          ),
-          TextButton(
-            onPressed: () => answer(roomId),
-            child: Text("Answer"),
-          ),
-          */
           SizedBox(height: 40,),
           StreamBuilder(
               stream: _timerSC.stream,
