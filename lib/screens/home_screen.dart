@@ -22,9 +22,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          TextButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyScreen())),
-            child: Text('Play'),
+          Center(
+           child: TextButton(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => LobbyScreen())),
+              child: Text('Play'),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AddQuestionScreen())),

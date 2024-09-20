@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:libre_quiz/screens/add_question_screen.dart';
 import 'package:libre_quiz/screens/home_screen.dart';
 import 'package:libre_quiz/screens/lobby.dart';
@@ -26,9 +27,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Libre Quiz',
-        home: auth.currentUser != null ? LobbyScreen() : LoginScreen(),
+      theme: ThemeData(
+        textTheme: GoogleFonts.pixelifySansTextTheme(
+          Theme.of(context).textTheme
+        ),
+        scaffoldBackgroundColor: Colors.black,
+        appBarTheme: AppBarTheme(color: Colors.deepPurple),
+      ),
+      debugShowCheckedModeBanner: false,
+      title: 'Libre Quiz',
+      home: auth.currentUser != null ? HomeScreen() : LoginScreen(),
     );
   }
 }
