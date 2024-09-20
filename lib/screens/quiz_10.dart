@@ -48,6 +48,7 @@ class _QuizScreenState extends State<QuizScreen> {
       //showQuestion();
     });
   }
+
   void getDB(roomId) async{
     DocumentReference gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
     DocumentSnapshot querySnapshotRoom = await gameRoom.get();

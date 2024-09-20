@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:libre_quiz/screens/add_question_screen.dart';
 import 'package:libre_quiz/screens/quiz_10.dart';
+import 'package:libre_quiz/screens/rooms_screen.dart';
 import 'package:libre_quiz/screens/solo_quiz_screen.dart';
 
 class LobbyScreen extends StatefulWidget {
@@ -15,8 +16,16 @@ class LobbyScreen extends StatefulWidget {
 
 class _LobbyScreenState extends State<LobbyScreen> {
   final TextEditingController _idController= TextEditingController();
+  int roomCount = 0;
 
 
+  @override
+  void initState() {
+    setState(() {
+      super.initState();
+      countRooms();
+    });
+  }
   Future<void> createRoom(String roomId, String roomCategory) async {
     CollectionReference categoryDB = FirebaseFirestore.instance.collection('quizes').doc(roomCategory).collection("questions");
     QuerySnapshot querySnapshot = await categoryDB.get();
@@ -76,6 +85,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
     Navigator.of(ctx).push(MaterialPageRoute(builder: (_) { return QuizScreen(roomId: _idController.text);}));
   }
 
+  void countRooms() async {
+    CollectionReference gameRooms = FirebaseFirestore.instance.collection('gameRooms');
+    QuerySnapshot querySnapshot = await gameRooms.get();
+
+    roomCount = querySnapshot.size;
+    print("LOBBY COUNT IS");
+    print(roomCount);
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -100,6 +118,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
           TextButton(
             onPressed: () => start(context),
             child: Text('Start'),
+          ),
+          SizedBox(height: 40,),
+          TextButton(
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RoomsScreen(roomCount: roomCount,))),
+            child: Text('List Rooms'),
           ),
         ],
       ),

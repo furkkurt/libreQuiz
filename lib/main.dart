@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Libre Quiz',
-        home: auth.currentUser != null ? RoomsScreen() : LoginScreen(),
+        home: auth.currentUser != null ? LobbyScreen() : LoginScreen(),
     );
   }
 }
