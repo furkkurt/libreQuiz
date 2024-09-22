@@ -69,7 +69,7 @@ class _QuizScreenState extends State<QuizScreen> {
     int remainingSeconds = 20;
     Timer.periodic(Duration(seconds: 1), (timer) {
       if(questionCountNow == questionCount) {
-        print("HEYY " + questionCountNow.toString() + " TO " + questionCount.toString());
+        //print("HEYY " + questionCountNow.toString() + " TO " + questionCount.toString());
         _timerSC.add((remainingSeconds--).toString());
       }
       else
@@ -105,7 +105,7 @@ class _QuizScreenState extends State<QuizScreen> {
     questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
     querySnapshotQuiz = await questions.get();
     var questionNumsStr = [""];
-
+    print("QUESTION NUMBER: " + questionCount.toString());
     questionNumsStr = querySnapshotRoom["questionNums"].split("/");
     for (int i = 0; i<questionNumsStr.length; i++) {
       questionNums.add(int.parse(questionNumsStr[i]));
@@ -121,52 +121,45 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void answer(roomId, choice) async {
-    gameRoom.update({playerScore: score});
-    print("(129)Score: " + score.toString());
-
+    _option1SC.add("");
+    _option2SC.add("");
+    _option3SC.add("");
+    _option4SC.add("");
     gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
     querySnapshotRoom = await gameRoom.get();
     questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
     querySnapshotQuiz = await questions.get();
 
-    if(choice == querySnapshotQuiz.docs[questionId]["option1"])
-      score++;
-    print(choice);
-    print(querySnapshotQuiz.docs[questionId]["option1"]);
-
-    /*
-    print("ASDASDYY 137 " + questionCount.toString());
-    int questionCountNow = questionCount;
-    Timer.periodic(Duration(seconds: 1), (timer) async {
-      querySnapshotQuiz = await questions.get();
-      if(questionCountNow != questionCount)
-        timer.cancel();
-      if(querySnapshotRoom["player1answered"] && querySnapshotRoom["player2answered"])
-        questionCount++;
-      print("ASDASDYY 145 " + questionCount.toString());
-    });
-    */
     if(querySnapshotRoom["player1"] == FirebaseAuth.instance.currentUser!.uid)
       gameRoom.update({"player1answered": true});
     else
       gameRoom.update({"player2answered": true});
 
-    while (querySnapshotRoom['player1answered'] == false || querySnapshotRoom["player2answered"] == false){
-      gameRoom = FirebaseFirestore.instance.collection('gameRooms').doc(roomId.toString());
+    Timer.periodic(Duration(seconds: 1), (timer) async {
       querySnapshotRoom = await gameRoom.get();
-      print("WAITING FOR OPPONENT TO ANSWER");
-    };
+      if (querySnapshotRoom['player1answered'] == true && querySnapshotRoom["player2answered"] == true) {
+        print("SCORE UPDATED" + choice.toString());
+        timer.cancel();
+        questionCount++;
+        if(choice == querySnapshotQuiz.docs[questionId]["option1"])
+          score++;
+        gameRoom.update({playerScore: score});
+        querySnapshotRoom = await gameRoom.get();
+        _answerSC.add(querySnapshotQuiz.docs[questionId]["option1"]);
+        _plScoreSC.add(querySnapshotRoom[playerScore].toString());
+        _opScoreSC.add(querySnapshotRoom[opScore].toString());
 
-    _answerSC.add(querySnapshotQuiz.docs[questionId]["option1"]);
-    _plScoreSC.add(querySnapshotRoom[playerScore].toString());
-    _opScoreSC.add(querySnapshotRoom[opScore].toString());
-
-    Future.delayed(const Duration(seconds: 5), () async {
-      _answerSC.add("");
-      _plScoreSC.add("");
-      _opScoreSC.add("");
-      gameRoom.update({"player1answered": false, "player2answered": false});
-      showQuestion(roomId);
+        Future.delayed(const Duration(seconds: 5), () async {
+          _answerSC.add("");
+          _plScoreSC.add("");
+          _opScoreSC.add("");
+          gameRoom.update({"player1answered": false, "player2answered": false});
+          showQuestion(roomId);
+        });
+      }
+      else {
+        //print("WAITING FOR OPPONENT TO ANSWER");
+      }
     });
   }
 
@@ -180,25 +173,14 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       body: Column(
         children: [
-          SizedBox(height: 40),
-          StreamBuilder(
-              stream: _categorySC.stream,
-              builder: (context, snapshot) {
-                if(snapshot.hasData) {
-                  return Flexible(child: Text(snapshot.data??''));
-                } else {
-                  return Flexible(child: Text(""));
-                }
-              }
-          ),
-          SizedBox(height: 40),
+          Center(child: SizedBox(height: 40)),
           StreamBuilder(
               stream: _questionSC.stream,
               builder: (context, snapshot) {
                 if(snapshot.hasData) {
-                  return FractionallySizedBox(widthFactor: 0.7, child: Flexible(child: Text(snapshot.data??'')));
+                  return FractionallySizedBox(widthFactor: 0.7, child: Flexible(child: Text(snapshot.data??'', style: TextStyle(color: Colors.white),)));
                 } else {
-                  return Flexible(child: Text(""));
+                  return Text("");
                 }
               }
           ),
@@ -206,39 +188,61 @@ class _QuizScreenState extends State<QuizScreen> {
           StreamBuilder(
               stream: _option1SC.stream,
               builder: (context, snapshot) {
-                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("A: " + snapshot.data.toString()));
+                if(snapshot.hasData){
+                  if(snapshot.data.toString() != "")
+                    return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("A: " + snapshot.data.toString()));
+                  else
+                    return Text("");
+                }
+                else
+                  return Text("");
               }
           ),
           StreamBuilder(
               stream: _option2SC.stream,
               builder: (context, snapshot) {
-                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("B: " + snapshot.data.toString()));
+                if(snapshot.hasData){
+                  if(snapshot.data.toString() != "")
+                    return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("B: " + snapshot.data.toString()));
+                  else
+                    return Text("");
+                }
+                else
+                  return Text("");
               }
           ),
           StreamBuilder(
               stream: _option3SC.stream,
               builder: (context, snapshot) {
-                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("C: " + snapshot.data.toString()));
+                if(snapshot.hasData){
+                  if(snapshot.data.toString() != "")
+                    return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("C: " + snapshot.data.toString()));
+                  else
+                    return Text("YOU PICKED YOUR ANSWER");
+                  }
+                  else
+                    return Text("");
               }
           ),
           StreamBuilder(
               stream: _option4SC.stream,
               builder: (context, snapshot) {
-                return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("D: " + snapshot.data.toString()));
+                if(snapshot.hasData){
+                  if(snapshot.data.toString() != "")
+                    return TextButton(onPressed: () => answer(roomId, snapshot.data.toString()), child: Text("D: " + snapshot.data.toString()));
+                  else
+                    return Text("WAITING FOR OPPONENT TO ANSWER");
+                }
+                else
+                  return Center(child: CircularProgressIndicator());
               }
           ),
           SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-            ],
-          ),
-          SizedBox(height: 40,),
           StreamBuilder(
               stream: _timerSC.stream,
               builder: (context, snapshot) {
                 if(snapshot.hasData) {
-                  return Flexible(child: Text(snapshot.data.toString()));
+                  return Flexible(child: Text(snapshot.data.toString(), style: TextStyle(color: Colors.white)));
                 } else {
                   return Flexible(child: Text(""));
                 }
@@ -248,7 +252,7 @@ class _QuizScreenState extends State<QuizScreen> {
               stream: _answerSC.stream,
               builder: (context, snapshot) {
                 if(snapshot.hasData && snapshot.data.toString().isNotEmpty) {
-                  return Flexible(child: Text("Answer: " + snapshot.data.toString()));
+                  return Flexible(child: Text("Answer: " + snapshot.data.toString(), style: TextStyle(color: Colors.white)));
                 } else {
                   return Flexible(child: Text(""));
                 }
@@ -258,7 +262,7 @@ class _QuizScreenState extends State<QuizScreen> {
               stream: _plScoreSC.stream,
               builder: (context, snapshot) {
                 if(snapshot.hasData && snapshot.data.toString().isNotEmpty) {
-                  return Flexible(child: Text("Your Score: " + snapshot.data.toString()));
+                  return Flexible(child: Text("Your Score: " + snapshot.data.toString(), style: TextStyle(color: Colors.white)));
                 } else {
                   return Flexible(child: Text(""));
                 }
@@ -268,7 +272,7 @@ class _QuizScreenState extends State<QuizScreen> {
               stream: _opScoreSC.stream,
               builder: (context, snapshot) {
                 if(snapshot.hasData && snapshot.data.toString().isNotEmpty) {
-                  return Flexible(child: Text("Opponent Score: " + snapshot.data.toString()));
+                  return Flexible(child: Text("Opponent Score: " + snapshot.data.toString(), style: TextStyle(color: Colors.white)));
                 } else {
                   return Flexible(child: Text(""));
                 }

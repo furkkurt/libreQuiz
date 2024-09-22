@@ -112,7 +112,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                       String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text(value),
+                      child: Text(value, style: TextStyle(color: Colors.white),),
                     );
                   }).toList(),
                 );
