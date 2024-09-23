@@ -16,27 +16,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController= TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  /*
-  void readData() async {
-    CollectionReference users = FirebaseFirestore.instance.collection('users');
-
-    QuerySnapshot querySnapshot = await users.get();
-    querySnapshot.docs.forEach((doc) {
-      doc['username'] == _usernameController.text ?
-          doc['password'] == _passwordController.text ?
-              Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen())) :
-              print("ŞİFRE HATALI") :
-          print("KULLANICI YOK");
-    });
-  }
-  */
-
   void login() async {
     try {
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text,
           password: _passwordController.text
       );
+      Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
         print('No user found for that email.');
@@ -58,13 +44,14 @@ class _LoginScreenState extends State<LoginScreen> {
             controller: _emailController,
             decoration: InputDecoration(
               labelText: "Email",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _passwordController,
+            obscureText: true,
             decoration: InputDecoration(
               labelText: "Password",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           SizedBox(height: 40),
           TextButton(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +17,9 @@ class LobbyScreen extends StatefulWidget {
 }
 
 class _LobbyScreenState extends State<LobbyScreen> {
+  StreamController<String> _categorySC= StreamController<String>();
+  List<String> categories = [];
+  String selectedCategory = "";
   final TextEditingController _idController= TextEditingController();
   int roomCount = 0;
 
@@ -23,6 +28,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   void initState() {
     setState(() {
       super.initState();
+      getCategories();
       countRooms();
     });
   }
@@ -94,6 +100,19 @@ class _LobbyScreenState extends State<LobbyScreen> {
     print(roomCount);
   }
 
+  void getCategories() async{
+    CollectionReference categoriesDB = FirebaseFirestore.instance.collection('quizes');
+    QuerySnapshot querySnapshot = await categoriesDB.get();
+
+    String categories = "";
+    querySnapshot.docs.forEach((doc) {
+      categories += doc["name"] + "/";
+    });
+    categories = categories.substring(0, categories.length-1);
+    selectedCategory = categories.split("/")[0];
+    _categorySC.add(categories);
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -102,14 +121,34 @@ class _LobbyScreenState extends State<LobbyScreen> {
       body: Column(
         children: [
           TextButton(
-            onPressed: () => createRoom("a", "Movies and TV"),
+            onPressed: () => createRoom(_idController.text, selectedCategory),
             child: Text('Create Room'),
+          ),
+          StreamBuilder(
+              stream: _categorySC.stream,
+              builder: (context, snapshot) {
+                return DropdownButton<String>(
+                  value: selectedCategory,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedCategory = newValue!;
+                    });
+                  },
+                  items: snapshot.data.toString().split("/").map<DropdownMenuItem<String>>((
+                      String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value, style: TextStyle(color: Colors.white),),
+                    );
+                  }).toList(),
+                );
+              }
           ),
           TextField(
             controller: _idController,
             decoration: InputDecoration(
               labelText: "Room ID",
-            ),
+            ), style: TextStyle(color: Colors.white),
           ),
           TextButton(
             onPressed: () => joinRoom("a", FirebaseAuth.instance.currentUser!.uid),

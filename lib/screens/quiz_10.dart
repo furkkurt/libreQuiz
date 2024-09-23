@@ -5,6 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'end_screen.dart';
+
 class QuizScreen extends StatefulWidget {
   final String roomId;
   const QuizScreen({Key? key, required this.roomId}) : super(key: key);
@@ -15,7 +17,7 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  StreamController<String> _categorySC= StreamController<String>();
+  StreamController<String> _imageSC= StreamController<String>();
   StreamController<String> _questionSC= StreamController<String>();
   StreamController<String> _option1SC= StreamController<String>();
   StreamController<String> _option2SC= StreamController<String>();
@@ -30,6 +32,7 @@ class _QuizScreenState extends State<QuizScreen> {
   var optionNums = [1, 2, 3, 4];
   int correctOption = 1;
   late int realCorrectOption;
+  int totalNumOfQuestions = 0;
   int score = 0;
   int questionCount = 0;
   var questionNums = [];
@@ -54,6 +57,7 @@ class _QuizScreenState extends State<QuizScreen> {
     DocumentSnapshot querySnapshotRoom = await gameRoom.get();
     CollectionReference questions = FirebaseFirestore.instance.collection('quizes').doc(querySnapshotRoom["category"]).collection("questions");
     QuerySnapshot querySnapshotQuiz = await questions.get();
+    totalNumOfQuestions = querySnapshotQuiz.size;
 
     if (querySnapshotRoom["player1"] == FirebaseAuth.instance.currentUser!.uid) {
       playerScore = "player1score";
@@ -78,6 +82,8 @@ class _QuizScreenState extends State<QuizScreen> {
     Future.delayed(const Duration(seconds: 21), () async {
       if(questionCountNow == questionCount) {
         questionCount++;
+        if(questionCount == totalNumOfQuestions)
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => EndScreen(roomId: roomId)), ModalRoute.withName("/End"));
         print("times up " + questionCount.toString());
         gameRoom.update({playerScore: score});
 
@@ -114,6 +120,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
     optionNums.shuffle();
     _questionSC.add(querySnapshotQuiz.docs[questionId]['question']);
+    _imageSC.add(querySnapshotQuiz.docs[questionId]['image']);
     _option1SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[0].toString()]);
     _option2SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[1].toString()]);
     _option3SC.add(querySnapshotQuiz.docs[questionId]['option'+optionNums[2].toString()]);
@@ -141,6 +148,9 @@ class _QuizScreenState extends State<QuizScreen> {
         print("SCORE UPDATED" + choice.toString());
         timer.cancel();
         questionCount++;
+        if(questionCount == totalNumOfQuestions)
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => EndScreen(roomId: roomId)), ModalRoute.withName("/End"));
+
         if(choice == querySnapshotQuiz.docs[questionId]["option1"])
           score++;
         gameRoom.update({playerScore: score});
@@ -173,12 +183,23 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       body: Column(
         children: [
-          Center(child: SizedBox(height: 40)),
+          Center(child: SizedBox(height: 80)),
           StreamBuilder(
               stream: _questionSC.stream,
               builder: (context, snapshot) {
                 if(snapshot.hasData) {
                   return FractionallySizedBox(widthFactor: 0.7, child: Flexible(child: Text(snapshot.data??'', style: TextStyle(color: Colors.white),)));
+                } else {
+                  return Text("");
+                }
+              }
+          ),
+          Center(child: SizedBox(height: 40)),
+          StreamBuilder(
+              stream: _imageSC.stream,
+              builder: (context, snapshot) {
+                if(snapshot.hasData) {
+                  return Image.network(snapshot.data.toString(), height: 250,);
                 } else {
                   return Text("");
                 }

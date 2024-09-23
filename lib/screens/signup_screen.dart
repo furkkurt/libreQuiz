@@ -20,25 +20,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _RePasswordController = TextEditingController();
   String emailAddress = "";
   String password = "";
-
-  /*
-  void addData() async {
-    CollectionReference users = FirebaseFirestore.instance.collection('users');
-
-    await users.add({
-      'username': _usernameController.text,
-      'password': _passwordController.text,
-    });
-
-  }
-  */
+  String username = "";
 
   void signUp() async {
+    username = _usernameController.text;
     emailAddress = _emailController.text;
     password = _passwordController.text;
 
-    print(emailAddress);
-    print(password);
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailAddress,
@@ -54,8 +42,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       print(e);
     }
 
-    print("HEYY");
-    print(FirebaseAuth.instance.currentUser);
+    CollectionReference userDB = FirebaseFirestore.instance.collection('users');
+    QuerySnapshot querySnapshot = await userDB.get();
+
+    userDB.doc(FirebaseAuth.instance.currentUser!.uid).set({
+      'username': username,
+      'w': 0,
+      'l': 0,
+      'd': 0
+    });
+
   }
 
   Widget build(BuildContext context) {
@@ -70,25 +66,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
             controller: _usernameController,
             decoration: InputDecoration(
               labelText: "Username",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _emailController,
             decoration: InputDecoration(
               labelText: "email",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _passwordController,
+            obscureText: true,
             decoration: InputDecoration(
               labelText: "Password",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _RePasswordController,
+            obscureText: true,
             decoration: InputDecoration(
               labelText: "Re-enter password",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           SizedBox(height: 40),
           TextButton(

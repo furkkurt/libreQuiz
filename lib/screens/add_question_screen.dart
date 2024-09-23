@@ -18,14 +18,15 @@ class AddQuestionScreen extends StatefulWidget {
 
 class _AddQuestionScreenState extends State<AddQuestionScreen> {
   StreamController<String> _categorySC= StreamController<String>();
+  final TextEditingController _imageController = TextEditingController();
   final TextEditingController _questionController = TextEditingController();
   final TextEditingController _option1Controller = TextEditingController();
   final TextEditingController _option2Controller = TextEditingController();
   final TextEditingController _option3Controller = TextEditingController();
   final TextEditingController _option4Controller = TextEditingController();
   final TextEditingController _newCategoryController = TextEditingController();
-  List<String> categories = [];
-  String selectedCategory = "";
+  List<String> categories = ["Select"];
+  String selectedCategory = "Select";
   var optionNums = [1, 2, 3, 4];
   int correctOption = 1;
 
@@ -43,6 +44,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
     if (_questionController.text != "" && _option1Controller.text != "" && _option2Controller.text != "" && _option3Controller.text != "" && _option4Controller.text != ""){
       await quizes.add({
         'question': _questionController.text,
+        'image': _imageController.text,
         'option1': _option1Controller.text,
         'option2': _option2Controller.text,
         'option3': _option3Controller.text,
@@ -57,7 +59,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
     CollectionReference categoriesDB = FirebaseFirestore.instance.collection('quizes');
     QuerySnapshot querySnapshot = await categoriesDB.get();
 
-    String categories = "";
+    String categories = "Select/";
     querySnapshot.docs.forEach((doc) {
       if(FirebaseAuth.instance.currentUser?.uid == doc["owner"])
         categories += doc["name"] + "/";
@@ -92,7 +94,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                   controller: _newCategoryController,
                   decoration: InputDecoration(
                     labelText: "New Category",
-                  ),
+                  ),style: TextStyle(color: Colors.white),
                 ),
               ),
               TextButton(onPressed: () => addCategory(), child: Text("Add new catgory")),
@@ -119,34 +121,40 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               }
           ),
           TextField(
+            controller: _imageController,
+            decoration: InputDecoration(
+              labelText: "Image Link (Optional)",
+            ),style: TextStyle(color: Colors.white),
+          ),
+          TextField(
             controller: _questionController,
             decoration: InputDecoration(
               labelText: "Question",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _option1Controller,
             decoration: InputDecoration(
               labelText: "Option 1 (CORRECT ANSWER)",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _option2Controller,
             decoration: InputDecoration(
               labelText: "Option 2",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _option3Controller,
             decoration: InputDecoration(
               labelText: "Option 3",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextField(
             controller: _option4Controller,
             decoration: InputDecoration(
               labelText: "Option 4",
-            ),
+            ),style: TextStyle(color: Colors.white),
           ),
           TextButton(
             onPressed: () => addQuestion(),

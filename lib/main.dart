@@ -10,6 +10,8 @@ import 'package:libre_quiz/screens/rooms_screen.dart';
 import 'package:libre_quiz/screens/signup_screen.dart';
 import 'screens/login_screen.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
