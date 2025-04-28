@@ -1,0 +1,12 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"librequiz-882b3","appId":"1:462929394694:android:c96ef34cecfb9a4cbcd787","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"librequiz-882b3","configurations":{"android":"1:462929394694:android:c96ef34cecfb9a4cbcd787","web":"1:462929394694:web:da94695cbec9e3ecbcd787"}}}}}}
+{
+  "emulators": {
+    "auth": {
+      "port": 9099,
+      "host": "0.0.0.0"
+    }
+  },
+  "remoteconfig": {
+    "template": "remoteconfig.template.json"
+  }
+}

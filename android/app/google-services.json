@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "462929394694",
+    "project_id": "librequiz-882b3",
+    "storage_bucket": "librequiz-882b3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:462929394694:android:c96ef34cecfb9a4cbcd787",
+        "android_client_info": {
+          "package_name": "com.example.librequiz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6m49d_L-eYHDGUjNxbjrp0d4KTfU5HYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:462929394694:android:7ad8a05043b38010bcd787",
+        "android_client_info": {
+          "package_name": "com.makindagames.librequiz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6m49d_L-eYHDGUjNxbjrp0d4KTfU5HYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
