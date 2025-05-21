@@ -119,11 +119,15 @@ class _QuizCreatorPageState extends State<QuizCreatorPage> {
         foregroundColor: Colors.white,
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
+          color: Colors.black,
           image: DecorationImage(
-            image: AssetImage('assets/bg.jpeg'),
+            image: const AssetImage('assets/bg.jpeg'),
             fit: BoxFit.cover,
-            opacity: 0.6,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.7), // 30% opacity of original image
+              BlendMode.srcOver,
+            ),
           ),
         ),
         child: Center(

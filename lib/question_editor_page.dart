@@ -321,12 +321,13 @@ class _QuestionEditorPageState extends State<QuestionEditorPage> {
       ),
       body: Container(
         decoration: BoxDecoration(
+          color: Colors.black,
           image: DecorationImage(
             image: const AssetImage('assets/bg.jpeg'),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.6),
-              BlendMode.darken,
+              Colors.black.withOpacity(0.7), // 30% opacity of original image
+              BlendMode.srcOver,
             ),
           ),
         ),

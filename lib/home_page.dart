@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'quiz_creator_page.dart';
 import 'question_editor_page.dart';
+import 'game_rooms_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -95,10 +96,15 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
+          color: Colors.black,
           image: DecorationImage(
-            image: AssetImage('assets/bg.jpeg'),
+            image: const AssetImage('assets/bg.jpeg'),
             fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.7), // 30% opacity of original image
+              BlendMode.srcOver,
+            ),
           ),
         ),
         child: Column(
@@ -309,6 +315,29 @@ class _HomePageState extends State<HomePage> {
   Widget _buildActionButtons() {
     return Column(
       children: [
+
+        // Game Rooms Button
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const GameRoomsPage()),
+            );
+          },
+          icon: const Icon(Icons.videogame_asset, color: Colors.white),
+          label: const Text('Game Rooms'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.purple.withOpacity(0.7),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 12,
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 20),
+
         // Create Quiz Button
         ElevatedButton.icon(
           onPressed: () {
@@ -317,10 +346,10 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute(builder: (context) => const QuizCreatorPage()),
             );
           },
-          icon: const Icon(Icons.add),
-          label: const Text('Create New Quiz'),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Create Quiz'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepOrange,
+            backgroundColor: Colors.deepOrange.withOpacity(0.7),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(
               horizontal: 24,
@@ -338,10 +367,10 @@ class _HomePageState extends State<HomePage> {
               _showMyQuizzes = !_showMyQuizzes;
             });
           },
-          icon: Icon(_showMyQuizzes ? Icons.close : Icons.list),
-          label: Text(_showMyQuizzes ? 'Hide My Quizzes' : 'Show My Quizzes'),
+          icon: Icon(_showMyQuizzes ? Icons.close : Icons.list, color: Colors.white),
+          label: Text(_showMyQuizzes ? 'Hide My Quizzes' : 'My Quizzes'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black.withOpacity(0.7),
+            backgroundColor: Colors.cyan.withOpacity(0.7),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(
               horizontal: 24,
