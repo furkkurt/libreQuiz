@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'registration_page.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -58,8 +59,10 @@ class _LoginPageState extends State<LoginPage> {
                 const SnackBar(content: Text('Login successful!')),
               );
               
-              // Navigate to home screen
-              // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
+              // Navigate to home page
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomePage()),
+              );
             } else {
               setState(() {
                 _errorMessage = "No user found with this email. Please register first.";
@@ -72,38 +75,80 @@ class _LoginPageState extends State<LoginPage> {
             });
           }
         } else {
-          // Real Firebase login
-          try {
-            print("Attempting login with Firebase");
-            UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            );
-            
-            print("Login successful with ID: ${userCredential.user!.uid}");
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Login successful!')),
-            );
-            
-            // Navigate to home screen
-            // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
-          } on FirebaseAuthException catch (authError) {
-            print("LOGIN ERROR: ${authError.toString()}");
-            setState(() {
-              _errorMessage = _getFirebaseErrorMessage(authError.code);
+          // REAL AUTHENTICATION MODE
+          print("Attempting Firebase Auth login with email: ${_emailController.text}");
+          
+          // Sign in with email and password
+          UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+          
+          String uid = userCredential.user!.uid;
+          print("Login successful! User ID: $uid");
+          
+          // Check if the user has a Firestore document
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .get();
+              
+          // Create user document if it doesn't exist
+          if (!userDoc.exists) {
+            print("User document not found, creating one");
+            await FirebaseFirestore.instance.collection('users').doc(uid).set({
+              'username': userCredential.user!.displayName ?? 'User',
+              'email': userCredential.user!.email ?? '',
+              'profilePicture': '',
+              'friends': [],
+              'badges': {},
+              'quizzes': [],
+              'createdAt': FieldValue.serverTimestamp(),
             });
-            throw authError;
           }
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login successful!')),
+          );
+          
+          // Navigate to home page
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
         }
       } on FirebaseAuthException catch (e) {
+        print("DETAILED AUTH ERROR: ${e.toString()}");
+        print("Error code: ${e.code}");
+        print("Error message: ${e.message}");
+        
+        // Provide user-friendly error messages
+        String errorMsg;
+        switch (e.code) {
+          case 'user-not-found':
+            errorMsg = 'No user found with this email. Please register first.';
+            break;
+          case 'wrong-password':
+            errorMsg = 'Incorrect password. Please try again.';
+            break;
+          case 'invalid-email':
+            errorMsg = 'Invalid email format. Please enter a valid email address.';
+            break;
+          case 'user-disabled':
+            errorMsg = 'This account has been disabled. Please contact support.';
+            break;
+          default:
+            errorMsg = 'Login failed: ${e.message}';
+        }
+        
         setState(() {
-          _errorMessage = _getFirebaseErrorMessage(e.code);
+          _errorMessage = errorMsg;
         });
       } catch (e) {
         setState(() {
-          _errorMessage = "An error occurred: $e";
+          _errorMessage = 'An error occurred: ${e.toString()}';
         });
+        print("Login error: $e");
       } finally {
         setState(() {
           _isLoading = false;

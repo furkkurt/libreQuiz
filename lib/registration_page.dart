@@ -21,7 +21,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   
   bool _isLoading = false;
   String _errorMessage = '';
-  bool _devMode = true; // Set to true to use dev mode
+  bool _devMode = false; // Set to true to use dev mode
 
   @override
   void dispose() {
@@ -74,7 +74,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       
       try {
         if (_devMode) {
-          // Dev mode for authentication but create real Firestore document
+          // Dev mode code (unchanged)
           await Future.delayed(const Duration(milliseconds: 500));
           print("DEV MODE: Simulated successful registration");
           
@@ -88,54 +88,75 @@ class _RegistrationPageState extends State<RegistrationPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Registration successful (DEV MODE)')),
           );
-        } else {
-          // Real Firebase authentication and Firestore document creation
-          try {
-            print("Firebase project ID: ${FirebaseAuth.instance.app.options.projectId}");
-          } catch (e) {
-            print("Could not retrieve Firebase project info: $e");
-          }
           
-          try {
-            // 1. Create user authentication
-            UserCredential userCredential = await FirebaseAuth.instance.signInAnonymously();
-            String uid = userCredential.user!.uid;
-            print("Registration successful with ID: $uid");
-            
-            // 2. Create Firestore document
-            await _createUserDocument(uid);
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Registration successful!')),
-            );
-          } on FirebaseAuthException catch (authError) {
-            print("DETAILED AUTH ERROR: ${authError.toString()}");
-            print("Error code: ${authError.code}");
-            print("Error message: ${authError.message}");
-            
-            if (authError.code == 'operation-not-allowed') {
-              setState(() {
-                _errorMessage = "Anonymous authentication is not enabled in Firebase Console.";
-              });
-            } else {
-              setState(() {
-                _errorMessage = "Authentication error: ${authError.code} - ${authError.message}";
-              });
-            }
-            throw authError; // Re-throw to be caught by outer catch
-          }
+          // Navigate to login page
+          if (!mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const LoginPage(),
+            ),
+          );
+        } else {
+          // REAL AUTHENTICATION MODE
+          print("Creating Firebase Auth user with email: ${_emailController.text}");
+          
+          // Create user with email and password in Firebase Auth
+          UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+          
+          // Get the user ID from the authentication result
+          String uid = userCredential.user!.uid;
+          print("Firebase Auth user created successfully with UID: $uid");
+          
+          // Create user document in Firestore
+          await _createUserDocument(uid);
+          
+          // Set display name in Auth profile
+          await userCredential.user!.updateDisplayName(_usernameController.text.trim());
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration successful!')),
+          );
+          
+          // Navigate to login page or home page
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const LoginPage(),
+            ),
+          );
         }
       } on FirebaseAuthException catch (e) {
-        // This should be caught by the inner try/catch now
+        print("DETAILED AUTH ERROR: ${e.toString()}");
+        print("Error code: ${e.code}");
+        print("Error message: ${e.message}");
+        
+        // Provide user-friendly error messages
+        String errorMsg;
+        switch (e.code) {
+          case 'email-already-in-use':
+            errorMsg = 'This email is already registered. Please use a different email or log in.';
+            break;
+          case 'weak-password':
+            errorMsg = 'Password is too weak. Please use a stronger password.';
+            break;
+          case 'invalid-email':
+            errorMsg = 'Invalid email format. Please enter a valid email address.';
+            break;
+          default:
+            errorMsg = 'Registration failed: ${e.message}';
+        }
+        
         setState(() {
-          _errorMessage = "Auth error: ${e.code} - ${e.message}";
+          _errorMessage = errorMsg;
         });
-        print("Firebase error: ${e.message}");
       } catch (e) {
+        print("General error during registration: $e");
         setState(() {
-          _errorMessage = "Error: ${e.toString()}";
+          _errorMessage = "Registration failed: ${e.toString()}";
         });
-        print("DETAILED ERROR: ${e.runtimeType} - ${e.toString()}");
       } finally {
         setState(() {
           _isLoading = false;
@@ -163,27 +184,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
   }
   
   Future<void> _createUserDocument(String uid) async {
-    try {
-      // Reference to the user document with the auth UID
-      final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
-      
-      // Create the document with the specified structure
-      await userDoc.set({
-        'username': _usernameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'profilePicture': '',
-        'friends': [],
-        'badges': {},
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      
-      print("Firestore user document created successfully with ID: $uid");
-    } catch (e) {
-      print("Error creating Firestore document: $e");
-      setState(() {
-        _errorMessage = "Error creating user profile: $e";
-      });
-    }
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'username': _usernameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'profilePicture': '',
+      'friends': [],
+      'badges': {},
+      'quizzes': [],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    print("Firestore user document created for UID: $uid");
   }
   
   String _getFirebaseErrorMessage(String code) {
