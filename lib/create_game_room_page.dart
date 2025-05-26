@@ -21,6 +21,10 @@ class _CreateGameRoomPageState extends State<CreateGameRoomPage> {
   String _errorMessage = '';
   String? _userId;
   String _userName = 'User';
+  int _selectedTimeLimit = 30; // Default 30 seconds
+  int _selectedQuestionCount = 10; // Default 10 questions
+  final List<int> _timeOptions = [15, 30, 60, 120, 180];
+  int _selectedTime = 30;
   
   @override
   void initState() {
@@ -59,9 +63,10 @@ class _CreateGameRoomPageState extends State<CreateGameRoomPage> {
     });
     
     try {
+      // Load all quizzes from the database instead of filtering by creatorId
       final querySnapshot = await FirebaseFirestore.instance
           .collection('quizzes')
-          .where('creatorId', isEqualTo: _userId)
+          .orderBy('createdAt', descending: true)
           .get();
           
       setState(() {
@@ -71,6 +76,7 @@ class _CreateGameRoomPageState extends State<CreateGameRoomPage> {
             'quizId': doc.id,
             'title': data['title'] ?? 'Untitled Quiz',
             'questionCount': data['questionCount'] ?? 0,
+            'creatorEmail': data['creatorEmail'] ?? 'Unknown',  // Add creator info
           };
         }).toList();
         
@@ -113,6 +119,10 @@ class _CreateGameRoomPageState extends State<CreateGameRoomPage> {
         'isActive': true,
         'hasStarted': false,
         'players': [],
+        'timeLimit': _selectedTimeLimit,
+        'questionCount': _selectedQuestionCount,
+        'currentQuestion': 0,
+        'scores': {},
         'createdAt': FieldValue.serverTimestamp(),
       });
       
@@ -299,11 +309,23 @@ class _CreateGameRoomPageState extends State<CreateGameRoomPage> {
                                           color: Colors.white,
                                         ),
                                       ),
-                                      subtitle: Text(
-                                        '${quiz['questionCount']} question${quiz['questionCount'] != 1 ? 's' : ''}',
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                        ),
+                                      subtitle: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${quiz['questionCount']} question${quiz['questionCount'] != 1 ? 's' : ''}',
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Created by: ${quiz['creatorEmail']}',
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       trailing: isSelected
                                           ? const Icon(Icons.check_circle, color: Colors.deepOrange)
@@ -322,6 +344,95 @@ class _CreateGameRoomPageState extends State<CreateGameRoomPage> {
                                   },
                                 ),
                               ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Time limit selection
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Time Limit per Question',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<int>(
+                              value: _selectedTime,
+                              dropdownColor: Colors.grey[800],
+                              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                              isExpanded: true,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              items: _timeOptions.map((int value) {
+                                return DropdownMenuItem<int>(
+                                  value: value,
+                                  child: Text(
+                                    '$value seconds',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (int? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _selectedTime = newValue;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Question count selection
+                    const Text(
+                      'Number of Questions',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ...['10', '20', 'All'].map((count) {
+                          return ChoiceChip(
+                            label: Text(count),
+                            selected: _selectedQuestionCount == (count == 'All' ? -1 : int.parse(count)),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  _selectedQuestionCount = count == 'All' ? -1 : int.parse(count);
+                                });
+                              }
+                            },
+                            backgroundColor: Colors.grey[800],
+                            selectedColor: Colors.deepOrange,
+                            labelStyle: TextStyle(
+                              color: _selectedQuestionCount == (count == 'All' ? -1 : int.parse(count)) 
+                                  ? Colors.white 
+                                  : Colors.grey[300],
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
                     
                     const SizedBox(height: 30),
                     

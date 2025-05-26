@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 import 'create_game_room_page.dart';
 import 'game_room_detail_page.dart';
+import 'web_layout_helper.dart';
 
 class GameRoomsPage extends StatefulWidget {
   const GameRoomsPage({Key? key}) : super(key: key);
@@ -23,8 +24,7 @@ class _GameRoomsPageState extends State<GameRoomsPage> {
   @override
   void initState() {
     super.initState();
-    _userId = FirebaseAuth.instance.currentUser?.uid ?? 'dev_user_1234';
-    _loadGameRooms();
+    _userId = FirebaseAuth.instance.currentUser?.uid;
   }
   
   @override
@@ -39,24 +39,39 @@ class _GameRoomsPageState extends State<GameRoomsPage> {
       _isLoading = true;
     });
     
-    // Listen to active game rooms
+    // Temporarily remove the where clause to see all rooms
     _roomsSubscription = FirebaseFirestore.instance
         .collection('gameRooms')
-        .where('isActive', isEqualTo: true)
-        .where('hasStarted', isEqualTo: false)
+        // .where('isActive', isEqualTo: true)  // Comment this out temporarily
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snapshot) {
+          print("DEBUG: Found ${snapshot.docs.length} game rooms");
           setState(() {
             _gameRooms = snapshot.docs;
             _isLoading = false;
           });
+          _printRoomDetails();
         }, onError: (error) {
           print('Error loading game rooms: $error');
           setState(() {
             _isLoading = false;
           });
         });
+  }
+  
+  void _printRoomDetails() {
+    print("DEBUG: Current game rooms:");
+    for (var room in _gameRooms) {
+      final data = room.data() as Map<String, dynamic>;
+      print("Room ID: ${room.id}");
+      print("Room Name: ${data['roomName']}");
+      print("Is Active: ${data['isActive']} (Type: ${data['isActive'].runtimeType})");
+      print("Has Started: ${data['hasStarted']} (Type: ${data['hasStarted'].runtimeType})");
+      print("Created At: ${data['createdAt']} (Type: ${data['createdAt'].runtimeType})");
+      print("All fields: ${data.keys.toList()}");
+      print("---");
+    }
   }
   
   List<DocumentSnapshot> get _filteredRooms {
@@ -122,7 +137,7 @@ class _GameRoomsPageState extends State<GameRoomsPage> {
             'players': FieldValue.arrayUnion([{
               'playerId': _userId,
               'playerName': playerName,
-              'joinedAt': FieldValue.serverTimestamp(),
+              'joinedAt': DateTime.now().toIso8601String(),
             }])
           });
       
@@ -154,7 +169,28 @@ class _GameRoomsPageState extends State<GameRoomsPage> {
       appBar: AppBar(
         title: const Text('Game Rooms'),
         backgroundColor: Colors.deepOrange,
-        foregroundColor: Colors.white,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateGameRoomPage(),
+                ),
+              ),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Create',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -163,157 +199,85 @@ class _GameRoomsPageState extends State<GameRoomsPage> {
             image: const AssetImage('assets/bg.jpeg'),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.7), // 30% opacity of original image
+              Colors.black.withOpacity(0.7),
               BlendMode.srcOver,
             ),
           ),
         ),
-        child: Column(
-          children: [
-            // Search bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search rooms...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('gameRooms')
+              .where('isActive', isEqualTo: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
+
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final rooms = snapshot.data!.docs;
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: rooms.length,
+              itemBuilder: (context, index) {
+                final room = rooms[index].data() as Map<String, dynamic>;
+                return Card(
+                  color: Colors.black87,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-              ),
-            ),
-            
-            // Room list
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _filteredRooms.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.meeting_room_outlined,
-                                  size: 64,
-                                  color: Colors.white70,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchQuery.isEmpty
-                                      ? 'No game rooms available.\nCreate one to get started!'
-                                      : 'No rooms found matching "$_searchQuery"',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 8.0,
-                          ),
-                          itemCount: _filteredRooms.length,
-                          itemBuilder: (context, index) {
-                            final roomSnapshot = _filteredRooms[index];
-                            final roomData = roomSnapshot.data() as Map<String, dynamic>;
-                            final roomName = roomData['roomName'] as String? ?? 'Unnamed Room';
-                            final creatorName = roomData['creatorName'] as String? ?? 'Unknown';
-                            final quizTitle = roomData['quizTitle'] as String? ?? 'Unknown Quiz';
-                            final players = List<Map<String, dynamic>>.from(roomData['players'] ?? []);
-                            final playerCount = players.length + 1; // +1 for creator
-                            
-                            return Card(
-                              color: Colors.black87,
-                              elevation: 2,
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0, 
-                                  vertical: 8.0,
-                                ),
-                                title: Text(
-                                  roomName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Quiz: $quizTitle',
-                                      style: TextStyle(
-                                        color: Colors.deepOrange[100],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Host: $creatorName',
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Players: $playerCount',
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                trailing: ElevatedButton(
-                                  onPressed: () => _joinRoom(roomSnapshot),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.deepOrange,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    roomData['creatorId'] == _userId ? 'Manage' : 'Join',
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                  child: ListTile(
+                    title: Text(
+                      room['roomName'] ?? 'Unnamed Room',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Quiz: ${room['quizTitle'] ?? 'Unknown Quiz'}',
+                          style: const TextStyle(color: Colors.orange),
                         ),
-            ),
-          ],
+                        Text(
+                          'Host: ${room['creatorName'] ?? 'Unknown'}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        Text(
+                          'Players: ${(room['players'] as List?)?.length ?? 0}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: () => _joinRoom(rooms[index]),
+                      child: const Text(
+                        'Join',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepOrange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreateGameRoomPage(),
-            ),
-          );
-        },
-        backgroundColor: Colors.deepOrange,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Create Room', style: TextStyle(color: Colors.white)),
       ),
     );
   }

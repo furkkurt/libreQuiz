@@ -50,13 +50,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAVdCdPVWveGcSOeJbMA2GV4KwKW5gNQtc',
-    appId: '1:462929394694:web:da94695cbec9e3ecbcd787',
+    apiKey: 'AIzaSyD6m49d_L-eYHDGUjNxbjrp0d4KTfU5HYY',
+    appId: '1:462929394694:web:YOUR_WEB_APP_ID',
     messagingSenderId: '462929394694',
     projectId: 'librequiz-882b3',
     authDomain: 'librequiz-882b3.firebaseapp.com',
-    storageBucket: 'librequiz-882b3.firebasestorage.app',
-    measurementId: 'G-JXTE3JKJSJ',
+    storageBucket: 'librequiz-882b3.appspot.com',
+    measurementId: 'G-MEASUREMENT_ID',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

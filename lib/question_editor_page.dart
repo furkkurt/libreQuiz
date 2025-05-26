@@ -238,15 +238,11 @@ class _QuestionEditorPageState extends State<QuestionEditorPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Question'),
-        content: const Text('Are you sure you want to delete this question? This action cannot be undone.'),
+        content: const Text('Deletion is temporarily disabled'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -259,45 +255,9 @@ class _QuestionEditorPageState extends State<QuestionEditorPage> {
     });
     
     try {
-      // Delete from Firestore
-      await FirebaseFirestore.instance
-          .collection('quizzes')
-          .doc(widget.quizId)
-          .collection('questions')
-          .doc(_currentQuestionId)
-          .delete();
-      
-      // Update question count
-      await FirebaseFirestore.instance
-          .collection('quizzes')
-          .doc(widget.quizId)
-          .update({
-            'questionCount': FieldValue.increment(-1),
-          });
-      
-      // Remove from local lists
-      setState(() {
-        _questions.removeAt(_currentQuestionIndex);
-        _questionIds.removeAt(_currentQuestionIndex);
-        _totalQuestions--;
-        
-        // Adjust current index if needed
-        if (_currentQuestionIndex >= _totalQuestions) {
-          _currentQuestionIndex = _totalQuestions > 0 ? _totalQuestions - 1 : 0;
-        }
-        
-        // Load the next question or clear form
-        if (_totalQuestions > 0) {
-          _loadQuestionData(_questions[_currentQuestionIndex]);
-          _currentQuestionId = _questionIds[_currentQuestionIndex];
-        } else {
-          _clearForm();
-          _currentQuestionId = null;
-        }
-      });
-      
+      // Deletion logic is disabled
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Question deleted successfully')),
+        const SnackBar(content: Text('Deletion is temporarily disabled')),
       );
     } catch (e) {
       setState(() {
